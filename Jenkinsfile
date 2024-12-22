@@ -3,7 +3,7 @@ pipeline {
     stages { 
         stage('Clone Repository') { 
             steps { 
-                git 'https://github.com/Mutiaaaputri/UASFramework-alternatif.git' 
+                git 'https://github.com/Mutiaaaputri/petshop_fix.git' 
             } 
         } 
         stage('Install Dependencies') { 
