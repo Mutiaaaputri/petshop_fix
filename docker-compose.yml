@@ -1,68 +1,73 @@
-version: '3'
+version: '3.8'
 
 services:
   app:
     build:
       context: .
-    image: php:8.2.12-fpm
-    container_name: petshop_fix
+      dockerfile: Dockerfile
+    container_name: laravel_app
     restart: unless-stopped
-    tty: true
-    environment:
-      SERVICE_NAME: app
-    working_dir: /var/www/petshop_fix
+    working_dir: /var/www
     volumes:
-      - .:/var/www/petshop_fix/
-      - ./storage/php.ini:/usr/local/etc/php/conf.d/local.ini
+      - .:/var/www
     networks:
-      - petshop_fix
+      - laravel
+    depends_on:
+      - db
     ports:
-      - "2027:80"
+      - "9000:9000"  # PHP-FPM port
 
   webserver:
     image: nginx:alpine
-    container_name: nginxpetshop_fix
+    container_name: nginx
     restart: unless-stopped
-    tty: true
     ports:
-      - "2024:80"
+      - "80:80"  # Nginx exposed port 8000
     volumes:
-      - .:/var/www/petshop_fix
+      - .:/var/www
       - ./storage/:/etc/nginx/conf.d/
     networks:
-      - petshop_fix
+      - laravel
+    depends_on:
+      - app
 
   db:
-    image: mysql:5.7
-    container_name: dbpetshop_fix
-    restart: always
-    tty: true
-    ports:
-      - "2022:3306"
-    volumes:
-      - lbdata:/var/lib/mysql
+    image: mysql:8.0
+    container_name: mysql
+    restart: unless-stopped
     environment:
-      MYSQL_ROOT_PASSWORD: tufamutia123
+      MYSQL_ROOT_PASSWORD: mutia
       MYSQL_DATABASE: PetshopFramework
+      MYSQL_PASSWORD: mutia
+    volumes:
+      - dbdata:/var/lib/mysql
     networks:
-      - petshop_fix
-
+      - laravel
+    ports:
+      - "3334:80"
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
 
   phpmyadmin:
     image: phpmyadmin/phpmyadmin
-    container_name: pmapetshop_fix
-    links:
-      - db
-    restart: always
+    container_name: phpmyadmin
+    restart: unless-stopped
+    environment:
+      PMA_HOST: db  # MySQL service name
+      PMA_PORT: 3306  # Default MySQL port
+      MYSQL_ROOT_PASSWORD: mutia # Root password for MySQL
     ports:
-      - "7000:80"
+      - "8082:80"  # Set a different port for phpMyAdmin
     networks:
-      - petshop_fix
+      - laravel
+    depends_on:
+      - db
 
 networks:
-  petshop_fix:
-    driver: bridge
+  laravel:
 
 volumes:
-  lbdata:
-    driver: local
+  dbdata:
